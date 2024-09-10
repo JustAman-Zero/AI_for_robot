@@ -3,10 +3,12 @@ import numpy as np
 import requests
 import time
 import threading
+from ultralytics import YOLO
 
 # ESP32-CAM stream URL
 ip = "192.168.186.92"
 esp32_cam_url = f"http://{ip}:81/stream"
+model = YOLO('yolov8m-face.pt') 
 
 # โหลด Haar Cascade สำหรับการตรวจจับใบหน้า
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -77,6 +79,60 @@ def get_frame(stream):
 
     # ถ้าไม่มีการส่งข้อมูลให้กลับค่าเริ่มต้น
     return 0, 0, 0, 0, 0
+def get_frame_img(esp32_cam_url):
+  stream = requests.get(esp32_cam_url, stream=True)
+  bytes = b''  # Buffer สำหรับเก็บข้อมูลที่ได้รับมาจาก stream
+  for chunk in stream.iter_content(chunk_size=1024):
+      # เก็บข้อมูลแต่ละ chunk ลงใน buffer
+      bytes += chunk
+      
+      # หาเริ่มต้นและจบของ JPEG frame
+      a = bytes.find(b'\xff\xd8')  # Start of JPEG
+      b = bytes.find(b'\xff\xd9')  # End of JPEG
+      
+      # ถ้าเจอ frame JPEG ที่สมบูรณ์
+      if a != -1 and b != -1:
+          jpg = bytes[a:b+2]  # ดึงข้อมูล JPEG ออกมา
+          bytes = bytes[b+2:]  # ลบข้อมูล JPEG ออกจาก buffer
+          
+          if len(jpg) > 0:
+              try:
+                  # แปลง JPEG เป็นภาพ
+                  frame = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
+                  
+
+                  if frame is not None:
+                      # หมุนภาพ 90 องศา
+                      frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+
+                      return frame
+              except cv2.error as e:
+                  print(f"Error decoding frame: {e}")
+          else:
+              print("Warning: Received empty jpg frame")
+
+    # ถ้าไม่มีการส่งข้อมูลให้กลับค่าเริ่มต้น
+  return None
+def get_frame_yolo(model,esp32_cam_url):
+  img=get_frame_img(esp32_cam_url)
+  # Perform object detection
+  results = model(img)
+  max_area = 0
+  result=(0,0,0,0,0)
+  # Loop through the detected objects and draw bounding boxes for 'person' class (class index 0 in COCO dataset)
+  for i, box in enumerate(results[0].boxes.xyxy):
+    # Get bounding box coordinates (convert to int)
+    x1, y1, x2, y2 = map(int, box)
+    w = x2-x1
+    h = y2-y1
+
+    if w*h>max_area:
+      max_area = w*h
+      result=(max_area,x1,y1,w,h)
+    
+  return result
+
+
 
 
 
@@ -86,12 +142,10 @@ def rotate_left_findface(esp32_cam_url):
     max_area, face_x, face_y, face_w, face_h = get_frame(stream)
     print(max_area, face_x, face_y, face_w, face_h)
     if max_area > 0:
-      send_command(ip,"ledon")
-      time.sleep(0.2)
-      send_command(ip,"ledoff")
+      send_command(ip,"bling")
       break
     
-    time.sleep(0.2)
+    time.sleep(0.5)
 
     send_command(ip,"step_left")
 
@@ -103,13 +157,11 @@ while(max_area < 100*100):
   send_command(ip,"step_go")
   time.sleep(0.2)
 
-  stream = requests.get(esp32_cam_url, stream=True)
-  max_area, face_x, face_y, face_w, face_h = get_frame(stream)
+  # stream = requests.get(esp32_cam_url, stream=True)
+  max_area, face_x, face_y, face_w, face_h = get_frame_yolo(model,esp32_cam_url)
   print(max_area, face_x, face_y, face_w, face_h)
   if max_area > 0:
-    send_command(ip,"ledon")
-    time.sleep(0.2)
-    send_command(ip,"ledoff")
+    send_command(ip,"bling")
   elif max_area == 0:
     max_area, face_x, face_y, face_w, face_h = rotate_left_findface(esp32_cam_url)
 
