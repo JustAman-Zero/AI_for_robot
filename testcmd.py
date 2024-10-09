@@ -1,14 +1,18 @@
 import requests
 import time
 
-def send_command(command):
+def send_command(command,direction,step):
   """Sends a GET request to a URL with the specified command and timestamp.
 
   Args:
       command: The command to send (e.g., "go", "left", "stop").
   """
-  url = f"http://192.168.186.92/{command}?{int(time.time()*1000)}"  # Using time.time() for timestamp
+  # url = f"http://192.168.55.92/{command}?{int(time.time()*1000)}"  # Using time.time() for timestamp
+  url = f"http://192.168.55.92/{command}?direction={direction}&step={step}"  # Using time.time() for timestamp
   response = requests.get(url)
+
+  # Handle response (optional)
+  # response = requests.get(url)
 
   # Handle response (optional)
   if response.status_code == 200:
@@ -17,4 +21,4 @@ def send_command(command):
     print(f"Error sending command: {response.status_code}")
 
 # Example usage
-send_command("bling")
+send_command("step_command", "forward", "1000")

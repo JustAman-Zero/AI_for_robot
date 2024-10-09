@@ -6,7 +6,7 @@ import threading
 from ultralytics import YOLO
 
 # ESP32-CAM stream URL
-ip = "192.168.186.92"
+ip = "192.168.55.92"
 esp32_cam_url = f"http://{ip}:81/stream"
 model = YOLO('yolov8m-face.pt') 
 
