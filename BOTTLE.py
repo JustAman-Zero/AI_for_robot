@@ -5,7 +5,7 @@ import time
 from ultralytics import YOLO
 
 # ESP32-CAM stream URL
-ip = "192.168.55.92"
+ip = "192.168.137.171"
 esp32_cam_url = f"http://{ip}:81/stream"
 model = YOLO('yolov8n.pt') 
 
@@ -21,8 +21,9 @@ def send_command(command,direction,step):
   Args:
       command: The command to send (e.g., "go", "left", "stop").
   """
+  ip2 = "192.168.137.171"
   # url = f"http://192.168.55.92/{command}?{int(time.time()*1000)}"  # Using time.time() for timestamp
-  url = f"http://192.168.55.92/{command}?direction={direction}&step={step}"  # Using time.time() for timestamp
+  url = f"http://{ip2}/{command}?direction={direction}&step={step}"  # Using time.time() for timestamp
   response = requests.get(url)
 
   # Handle response (optional)
@@ -131,39 +132,61 @@ def find_objects_id(img,model,id):
 
 print("before while")
 
-last_step = ""
+last_step = "" 
 
 while True:
   frame = get_frame_img(esp32_cam_url)
-  a,x,y,w,h = find_objects_id(frame, model,39)
+  a,x,y,w,h = find_objects_id(frame, model,0)
   
   print(a,x+w/2)
 
 
   if a == 0:
-    if last_step == "step_go step_left":
-      send_command_old(ip,"step_right")
-      # send_command("step_command","right","10")
+    if last_step == "step_left":
+      # send_command_old(ip,"step_right")
+      send_command("step_command","left","100")
+      last_step = "step_left"
+      print(f"left")
+    elif last_step == "step_right":
+      send_command("step_command","right","100")
+      last_step = "step_right"
+      print(f"right")
+      # send_command_old(ip,"step_left")
+      # last_step=""
+    elif "step_go step_left" in last_step:
+        send_command("step_command","right","100")
+        last_step = ""
+        print(f"right")
+    elif "step_go step_right" in last_step:
+        send_command("step_command","left","100")
+        last_step = ""
+        print(f"left")
     else:
-      # send_command("step_command","left","10")
-      send_command_old(ip,"step_left")
-    last_step=""
+        send_command("step_command","left","100")
+        print(f"left")
 
   else:
     if x+w//2 > 150:
-      send_command_old(ip,"step_left")
-      # send_command("step_command","left",str(int(((x+w/2)-120)/120*100)))
+      # send_command_old(ip,"step_left")
+      send_command("step_command","left",str(int(((x+w/2)-120)/120*100)))
       last_step = "step_left"
+      print(f"left")
     elif x+w//2 < 90:
-      send_command_old(ip,"step_right")
+      # send_command_old(ip,"step_right")
       # send_command("step_command","right","100")
-      # send_command("step_command","right",str(int((120-(x+w/2))/120*100)))
+      send_command("step_command","right",str(int((120-(x+w/2))/120*100)))
       last_step = "step_right"
-  
+      print(f"right")
+
 
   if a>0 and a<5000:
-    # send_command("step_command","forward","10")
-    send_command_old(ip,"step_go")
+    
+    m = int((5000-a)/10)
+    if 110<=(x+w//2) or (x+w//2)>=130:
+      m = 100
+    send_command("step_command","forward",str(m))
+    # send_command_old(ip,"step_go")
+    print(f"forward area:{m}")
     last_step = "step_go "+ last_step
 
   time.sleep(0.2)

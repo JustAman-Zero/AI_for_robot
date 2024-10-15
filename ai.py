@@ -5,14 +5,14 @@ import time
 import threading
 
 # ESP32-CAM stream URL
-esp32_cam_url = "http://192.168.186.92:81/stream"
+esp32_cam_url = "http://192.168.137.143:81/stream"
 
 # โหลด Haar Cascade สำหรับการตรวจจับใบหน้า
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 # ฟังก์ชันสำหรับการส่งคำสั่งไปยังรถ
 def send_command(command, timestamp):
-    url = f"http://192.168.186.92/{command}?time={timestamp}"  # Timestamp as a parameter
+    url = f"http://192.168.137.143/{command}?time={timestamp}"  # Timestamp as a parameter
     response = requests.get(url)
 
     if response.status_code == 200:
