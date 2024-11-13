@@ -6,7 +6,7 @@ from ultralytics import YOLO
 import random
 
 # ESP32-CAM stream URL
-ip = "192.168.137.171"
+ip = "192.168.137.35"
 esp32_cam_url = f"http://{ip}:81/stream"
 model = YOLO('yolov8n.pt') 
 
@@ -22,7 +22,7 @@ def send_command(command,direction,step):
   Args:
       command: The command to send (e.g., "go", "left", "stop").
   """
-  ip2 = "192.168.137.171"
+  ip2 = "192.168.137.35"
   # url = f"http://192.168.55.92/{command}?{int(time.time()*1000)}"  # Using time.time() for timestamp
   url = f"http://{ip2}/{command}?direction={direction}&step={step}"  # Using time.time() for timestamp
   response = requests.get(url)
@@ -145,27 +145,29 @@ while True:
   if a == 0:
     if last_step == "step_left":
       # send_command_old(ip,"step_right")
-      send_command("step_command","left","100")
+      send_command("step_command","left_rotate","100")
       last_step = "step_left"
       print(f"left")
     elif last_step == "step_right":
-      send_command("step_command","right","100")
+      send_command("step_command","right_rotate","100")
       last_step = "step_right"
       print(f"right")
       # send_command_old(ip,"step_left")
       # last_step=""
     elif "step_go step_left" in last_step:
-        send_command("step_command","right","100")
+        send_command("step_command","right_rotate","100")
         last_step = ""
         print(f"right")
     elif "step_go step_right" in last_step:
-        send_command("step_command","left","100")
+        send_command("step_command","left_rotate","100")
         last_step = ""
         print(f"left")
     else:
-        x = random.choice(["left", "right", "forward"])
-        y = random.random()*900+100
-        send_command("step_command",x,str(y))
+        send_command("step_command","left_rotate","100")
+        send_command("step_command","forward","50")
+        # x = random.choice(["left", "right", "forward"])
+        # y = random.random()*900+100
+        # send_command("step_command",x,str(y))
         # send_command("step_command",x,"100")
         
 
