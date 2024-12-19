@@ -3,7 +3,6 @@ import time
 
 def send_command(command,direction,step):
   """Sends a GET request to a URL with the specified command and timestamp.
-
   Args:
       command: The command to send (e.g., "go", "left", "stop").
   """
@@ -21,6 +20,7 @@ def send_command(command,direction,step):
 
 send_command("step_command", "stop", "1000")
 # Example usage
-# for i in range(10):
 #   send_command("step_command", "forward", "1000")
+#   send_command("step_command", "right_rotate", "1000")
+#   send_command("step_command", "left_rotate", "1000")
 #   send_command("step_command", "right_rotate", "1000")
